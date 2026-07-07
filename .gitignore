@@ -5,3 +5,9 @@ dist/
 .env.*.local
 *.log
 .DS_Store
+
+# managed by open-wa
+**.data.json
+**.node-persist**
+**_IGNORE_**
+# end managed by open-wa
