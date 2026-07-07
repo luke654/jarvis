@@ -122,7 +122,7 @@ export default function VoiceAssistant() {
     { role: 'jarvis', text: 'Sistema online. Come posso assisterti, Luca?' },
   ])
   const [error, setError] = useState('')
-  const recogRef = useRef<SpeechRecognition | null>(null)
+  const recogRef = useRef<any>(null)
   const logEndRef = useRef<HTMLDivElement>(null)
   const historyRef = useRef<{ role: string; content: string }[]>([])
 
@@ -135,7 +135,7 @@ export default function VoiceAssistant() {
     const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition
     if (!SR) { setError('SpeechRecognition non supportato in questo browser.'); return }
 
-    const recog = new SR() as SpeechRecognition
+    const recog = new SR() as any
     recog.lang = 'it-IT'
     recog.interimResults = true
     recog.maxAlternatives = 1
@@ -145,9 +145,9 @@ export default function VoiceAssistant() {
     setTranscript('')
     setError('')
 
-    recog.onresult = (e) => {
-      const interim = Array.from(e.results)
-        .map((r) => r[0].transcript)
+    recog.onresult = (e: any) => {
+      const interim = Array.from(e.results as any[])
+        .map((r: any) => r[0].transcript)
         .join('')
       setTranscript(interim)
     }
@@ -182,7 +182,7 @@ export default function VoiceAssistant() {
       }
     }
 
-    recog.onerror = (e) => {
+    recog.onerror = (e: any) => {
       if (e.error !== 'no-speech') setError(`Errore: ${e.error}`)
       setPhase('idle')
     }
