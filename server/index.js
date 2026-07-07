@@ -15,9 +15,10 @@ const server = http.createServer(app)
 const wss = new WebSocketServer({ server })
 
 let waClient = null
+let waState = 'disconnected' // 'disconnected' | 'loading' | 'qr' | 'connected'
+let lastQr = null
 const wsClients = new Set()
 
-// Broadcast to all connected frontend clients
 function broadcast(data) {
   const msg = JSON.stringify(data)
   for (const ws of wsClients) {
@@ -27,16 +28,14 @@ function broadcast(data) {
 
 wss.on('connection', (ws) => {
   wsClients.add(ws)
-  // Send current connection status on connect
-  ws.send(JSON.stringify({ type: 'status', connected: waClient !== null }))
+  ws.send(JSON.stringify({ type: 'state', state: waState, qr: lastQr }))
   ws.on('close', () => wsClients.delete(ws))
 })
 
 // ─── REST API ────────────────────────────────────────────────────────────────
 
-// Health / connection status
 app.get('/api/status', (req, res) => {
-  res.json({ connected: waClient !== null })
+  res.json({ state: waState, qr: lastQr })
 })
 
 // Get all chats
@@ -112,6 +111,9 @@ Non fare mai premesse lunghe. Vai subito al punto.`,
 
 // ─── WhatsApp Client ─────────────────────────────────────────────────────────
 
+waState = 'loading'
+broadcast({ type: 'state', state: waState, qr: null })
+
 create({
   sessionId: 'fusion-os',
   multiDevice: true,
@@ -122,12 +124,19 @@ create({
   logConsole: false,
   popup: false,
   qrTimeout: 0,
+  qrCallback: (qr) => {
+    console.log('📱 QR code ready — scan with WhatsApp')
+    lastQr = qr
+    waState = 'qr'
+    broadcast({ type: 'state', state: 'qr', qr })
+  },
 }).then((client) => {
   waClient = client
+  lastQr = null
+  waState = 'connected'
   console.log('✅ WhatsApp connected')
-  broadcast({ type: 'status', connected: true })
+  broadcast({ type: 'state', state: 'connected', qr: null })
 
-  // Real-time incoming messages → broadcast to frontend
   client.onMessage(async (msg) => {
     broadcast({
       type: 'message',
@@ -142,15 +151,19 @@ create({
     })
   })
 
-  // QR code event (for re-auth)
   client.onStateChange((state) => {
-    console.log('WA state:', state)
-    if (state === 'CONFLICT' || state === 'UNLAUNCHED') {
-      client.forceRefocus()
+    console.log('WA state change:', state)
+    if (state === 'CONFLICT' || state === 'UNLAUNCHED') client.forceRefocus()
+    if (state === 'UNPAIRED' || state === 'UNPAIRED_IDLE') {
+      waClient = null
+      waState = 'disconnected'
+      broadcast({ type: 'state', state: 'disconnected', qr: null })
     }
   })
 }).catch((err) => {
   console.error('❌ WhatsApp init error:', err.message)
+  waState = 'disconnected'
+  broadcast({ type: 'state', state: 'disconnected', qr: null })
 })
 
 const PORT = process.env.PORT || 3001
