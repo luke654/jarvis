@@ -3,8 +3,9 @@ import { MessageCircle, Search, Send, Wifi, WifiOff, Loader2, QrCode } from 'luc
 import Header from '../components/layout/Header'
 import Card from '../components/ui/Card'
 
-const API = 'http://localhost:3001/api'
-const WS_URL = 'ws://localhost:3001'
+const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+const API = `${BASE}/api`
+const WS_URL = BASE.replace(/^https?/, (p: string) => (p === 'https' ? 'wss' : 'ws'))
 
 type WaState = 'disconnected' | 'loading' | 'qr' | 'connected'
 

@@ -9,7 +9,8 @@ interface Line {
   text: string
 }
 
-const API = 'http://localhost:3001/api/jarvis'
+const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+const API = `${BASE}/api/jarvis`
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function pickVoice(): SpeechSynthesisVoice | null {
