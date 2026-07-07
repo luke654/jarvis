@@ -6,10 +6,16 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
   const navigate = useNavigate()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!email || !password) {
+      setError('Email and password are required.')
+      return
+    }
+    setError('')
     navigate('/dashboard')
   }
 
@@ -62,6 +68,9 @@ export default function Login() {
                 </button>
               </div>
             </div>
+            {error && (
+              <p className="text-xs text-red-400">{error}</p>
+            )}
             <button
               type="submit"
               className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-colors mt-2"
