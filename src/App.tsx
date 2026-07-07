@@ -15,6 +15,7 @@ import FusionCFO from './pages/FusionCFO'
 import Health from './pages/Health'
 import Content from './pages/Content'
 import Settings from './pages/Settings'
+import VoiceAssistant from './pages/VoiceAssistant'
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="health" element={<Health />} />
           <Route path="content" element={<Content />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="jarvis" element={<VoiceAssistant />} />
         </Route>
       </Routes>
     </BrowserRouter>

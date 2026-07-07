@@ -16,6 +16,7 @@ import {
   Settings,
   ChevronRight,
   Zap,
+  Mic,
 } from 'lucide-react'
 
 const navSections = [
@@ -23,6 +24,7 @@ const navSections = [
     label: 'Core',
     items: [
       { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/jarvis', icon: Mic, label: 'JARVIS' },
       { to: '/command-center', icon: Terminal, label: 'Command Center' },
     ],
   },

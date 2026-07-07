@@ -3,6 +3,9 @@ const express = require('express')
 const cors = require('cors')
 const http = require('http')
 const { WebSocketServer } = require('ws')
+const Anthropic = require('@anthropic-ai/sdk').default
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 const app = express()
 app.use(cors())
@@ -80,6 +83,29 @@ app.post('/api/chats/:chatId/send', async (req, res) => {
     const result = await waClient.sendText(req.params.chatId, text)
     res.json({ id: result })
   } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── JARVIS AI endpoint ───────────────────────────────────────────────────────
+app.post('/api/jarvis', async (req, res) => {
+  const { messages = [] } = req.body
+  if (!messages.length) return res.status(400).json({ error: 'messages required' })
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-opus-4-8',
+      max_tokens: 1024,
+      system: `Sei JARVIS, l'assistente AI personale e avanzato di Luca Pantea, CEO di Fusion Media.
+Sei preciso, diretto, leggermente formale ma mai freddo — come il JARVIS di Iron Man.
+Rispondi sempre in italiano, in modo conciso (max 3 frasi salvo richiesta diversa).
+Hai accesso al contesto di Fusion Media: agenzia di marketing, lead generation, video production.
+Non fare mai premesse lunghe. Vai subito al punto.`,
+      messages,
+    })
+    const reply = response.content[0]?.type === 'text' ? response.content[0].text : ''
+    res.json({ reply })
+  } catch (err) {
+    console.error('Jarvis API error:', err.message)
     res.status(500).json({ error: err.message })
   }
 })
