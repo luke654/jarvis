@@ -47,7 +47,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
           <StatCard
             label="Revenue (YTD)"
-            value={`€${(revenue.current / 1000).toFixed(0)}k`}
+            value={revenue.current >= 1000000 ? `€${(revenue.current / 1000000).toFixed(1)}M` : `€${(revenue.current / 1000).toFixed(0)}k`}
             change={pct(revenue.current, revenue.previous)}
             icon={<DollarSign size={18} />}
           />

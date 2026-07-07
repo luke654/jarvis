@@ -42,7 +42,7 @@ export const mockEvents: CalendarEvent[] = [
 ]
 
 export const dashboardStats = {
-  revenue: { current: 171000, previous: 142000 },
+  revenue: { current: 1000000, previous: 142000 },
   activeClients: { current: 4, previous: 3 },
   openOpportunities: { current: 68500, previous: 54000 },
   tasksOverdue: { current: 2, previous: 4 },
