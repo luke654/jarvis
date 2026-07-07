@@ -12,7 +12,7 @@ app.use(cors())
 app.use(express.json())
 
 const server = http.createServer(app)
-const wss = new WebSocketServer({ server })
+const wss = new WebSocketServer({ server, path: '/ws' })
 
 let waClient = null
 let waState = 'disconnected' // 'disconnected' | 'loading' | 'qr' | 'connected'

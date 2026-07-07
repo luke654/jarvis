@@ -1,0 +1,87 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Build frontend
+        run: npm ci && npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create release directory on VPS
+        run: |
+          RELEASE=$(date +%Y%m%d-%H%M%S)
+          echo "RELEASE=$RELEASE" >> $GITHUB_ENV
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "mkdir -p /var/www/html/jarvis/releases/$RELEASE /var/www/html/jarvis/persistent"
+
+      - name: Rsync frontend build
+        run: |
+          rsync -az --delete -e "ssh -i ~/.ssh/deploy_key" \
+            dist/ \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/html/jarvis/releases/${{ env.RELEASE }}/dist/
+
+      - name: Rsync server source
+        run: |
+          rsync -az --delete \
+            --exclude 'node_modules' \
+            --exclude '.env' \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            server/ \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/html/jarvis/releases/${{ env.RELEASE }}/server/
+
+      - name: Install, link & reload
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << EOF
+            set -e
+            BASE=/var/www/html/jarvis
+            RELEASE=${{ env.RELEASE }}
+            RELEASE_DIR=\$BASE/releases/\$RELEASE
+
+            echo "📦 Installing server dependencies..."
+            cd \$RELEASE_DIR/server
+            npm ci --omit=dev
+
+            echo "🔗 Linking persistent .env..."
+            ln -nfs \$BASE/persistent/server.env \$RELEASE_DIR/server/.env
+
+            echo "🙏 Switching current symlink..."
+            ln -nfs \$RELEASE_DIR \$BASE/current
+
+            echo "♻️ Restarting server via PM2..."
+            if pm2 describe jarvis-server > /dev/null 2>&1; then
+              pm2 restart jarvis-server
+            else
+              pm2 start \$BASE/current/server/index.js \
+                --name jarvis-server \
+                --cwd \$BASE/persistent
+              pm2 save
+            fi
+
+            echo "🚾 Cleaning old releases (keep 5)..."
+            ls -dt \$BASE/releases/* | tail -n +6 | xargs -d "\n" rm -rf 2>/dev/null || true
+
+            echo "✅ Deployed \$RELEASE"
+          EOF

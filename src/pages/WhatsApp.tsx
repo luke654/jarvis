@@ -5,7 +5,7 @@ import Card from '../components/ui/Card'
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
 const API = `${BASE}/api`
-const WS_URL = BASE.replace(/^https?/, (p: string) => (p === 'https' ? 'wss' : 'ws'))
+const WS_URL = BASE.replace(/^https?/, (p: string) => (p === 'https' ? 'wss' : 'ws')) + '/ws'
 
 type WaState = 'disconnected' | 'loading' | 'qr' | 'connected'
 
