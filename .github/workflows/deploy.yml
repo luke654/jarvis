@@ -68,7 +68,8 @@ jobs:
             ln -nfs \$BASE/persistent/server.env \$RELEASE_DIR/server/.env
 
             echo "🙏 Switching current symlink..."
-            ln -nfs \$RELEASE_DIR \$BASE/current
+            rm -rf \$BASE/current
+            ln -s \$RELEASE_DIR \$BASE/current
 
             echo "♻️ Restarting server via PM2..."
             if pm2 describe jarvis-server > /dev/null 2>&1; then
